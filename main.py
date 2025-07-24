@@ -12,6 +12,7 @@ class NetworkChangeDetector:
     def __init__(self, on_change: Callable):
         self.on_change = on_change
         self.ip = self._get_current_ip()
+        self.all_interface_ips = self._get_all_interface_ips()
         self.interfaces = self._get_active_interfaces()
         self.ssid = self._get_current_ssid()
 
@@ -32,12 +33,18 @@ class NetworkChangeDetector:
             something_changed = False
 
             current_ip = self._get_current_ip()
+            current_interface_ips = self._get_all_interface_ips()
             current_interfaces = self._get_active_interfaces()
             current_ssid = self._get_current_ssid()
 
             if current_ip != self.ip:
                 print(f"[NCD: IP] Change of IP: {self.ip} -> {current_ip}")
                 self.ip = current_ip
+                something_changed = True
+
+            if current_interface_ips != self.all_interface_ips:
+                print(f"[NCD: Interface IPs] Change of some Interface IP: {self.all_interface_ips} -> {current_interface_ips}")
+                self.all_interface_ips = current_interface_ips
                 something_changed = True
 
             if current_interfaces != self.interfaces:
@@ -64,6 +71,21 @@ class NetworkChangeDetector:
             return ip
         except:
             return None
+
+    def _get_all_interface_ips(self):
+        results = {}
+        addrs = psutil.net_if_addrs()
+        stats = psutil.net_if_stats()
+
+        for iface, iface_addrs in addrs.items():
+            if not stats.get(iface) or not stats[iface].isup:
+                continue
+
+            for addr in iface_addrs:
+                if addr.family == socket.AF_INET: # IPv4
+                    results[iface] = addr.address
+
+        return results
 
     def _get_active_interfaces(self):
         stats = psutil.net_if_stats()
