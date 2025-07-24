@@ -14,17 +14,17 @@ class NetworkChangeDetector:
         self.ip = self._get_current_ip()
         self.interfaces = self._get_active_interfaces()
         self.ssid = self._get_current_ssid()
-        self._stop_event = threading.Event()
 
     def start_monitoring(self, interval_seconds: int = 2):
-        self.thread = threading.Thread(target=self._monitor, args=(interval_seconds,))
-        self.thread.start()
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(target=self._monitor, args=(interval_seconds,))
+        self._thread.start()
         print("[NCD] Network monitor started")
         
     def stop_monitoring(self):
         print("[NCD] Network monitor stopping...")
         self._stop_event.set()
-        self.thread.join()
+        self._thread.join()
         print("[NCD] Network monitor stopped")
 
     def _monitor(self, interval_seconds: int):
